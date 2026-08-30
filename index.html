@@ -36,12 +36,14 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
 
-  <!-- 상단 네비게이션 헤더 -->
+  <!-- 상단 네비게이션 헤더 (모바일 반응형 2단 분리 & 글자 깨짐 방지) -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+      
+      <!-- 제목 & 아이콘 -->
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i data-lucide="trending-up" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </div>
         <div>
           <h1 class="text-sm sm:text-base font-black text-slate-900 leading-tight">
@@ -50,23 +52,23 @@
         </div>
       </div>
 
-      <!-- 헤더 액션 버튼 -->
-      <div class="flex items-center gap-1.5 sm:gap-2">
-        <button id="btn-history" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition active:scale-95">
-          <i data-lucide="history" class="w-3.5 h-3.5"></i>
+      <!-- 헤더 액션 버튼 바 (모바일: 제목 아래 4열 그리드로 가로 배치, PC: 우측 정렬) -->
+      <div class="grid grid-cols-4 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+        <button id="btn-history" class="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition active:scale-95 whitespace-nowrap">
+          <i data-lucide="history" class="w-3.5 h-3.5 shrink-0"></i>
           <span>기록</span>
         </button>
-        <button id="btn-share" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition active:scale-95">
-          <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">링크 복사</span>
+        <button id="btn-share" class="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition active:scale-95 whitespace-nowrap">
+          <i data-lucide="share-2" class="w-3.5 h-3.5 shrink-0"></i>
+          <span>공유</span>
         </button>
-        <button id="btn-theory" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition active:scale-95">
-          <i data-lucide="book-open" class="w-3.5 h-3.5 text-white"></i>
+        <button id="btn-theory" class="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition active:scale-95 whitespace-nowrap">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 shrink-0 text-white"></i>
           <span>이론 가이드</span>
         </button>
-        <button id="btn-export-csv" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition active:scale-95">
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">CSV</span>
+        <button id="btn-export-csv" class="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition active:scale-95 whitespace-nowrap">
+          <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+          <span>데이터 저장</span>
         </button>
       </div>
     </div>
@@ -722,6 +724,7 @@
       sliderS.max = endS;
       valEndS.textContent = endS.toFixed(0);
       updateKPIs();
+      updateCockpitGauges();
       renderAllCharts();
       if (state.viewMode === '2D') {
         drawRoadCanvas();
@@ -756,6 +759,48 @@
       document.getElementById('tag-max-ay').textContent = `최대: ${maxAy.toFixed(2)} m/s²`;
       document.getElementById('tag-max-jy').textContent = `피크: ${peakJ.toFixed(2)} m/s³`;
       document.getElementById('tag-max-omega').textContent = `피크: ${peakOmega.toFixed(2)} °/s`;
+    }
+
+    // 콕핏 계측기 전용 독립 업데이트 함수 (2D/3D 모드 및 주행거리 실시간 완벽 연동)
+    function updateCockpitGauges() {
+      if (!computedData) return;
+      const { l, r, lw, v } = state;
+      const s = state.s;
+
+      let curK = 0, curDk = 0;
+      if (s >= 0 && s <= l) {
+        curK = (1 / (2 * r)) * (1 - Math.cos((Math.PI * s) / l));
+        curDk = (Math.PI / (2 * r * l)) * Math.sin((Math.PI * s) / l);
+      } else if (s > l) {
+        curK = 1 / r;
+        curDk = 0;
+      }
+
+      const curAy = v * v * curK;
+      const curDelta = Math.atan(lw * curK) * (180 / Math.PI); // 앞바퀴 실제 조향각 (deg)
+      const curOmega = (v * (lw * curDk) / (1 + Math.pow(lw * curK, 2))) * (180 / Math.PI);
+      const curG = curAy / 9.81;
+
+      // 텍스트 수치 업데이트
+      meterSteer.textContent = curDelta.toFixed(2);
+      meterOmega.textContent = curOmega.toFixed(1);
+      meterAy.textContent = curAy.toFixed(2);
+      meterG.textContent = curG.toFixed(2);
+
+      // 실제 스티어링 휠 기어비(약 14:1)를 적용하여 시각적으로 핸들이 확연하게 회전하도록 표시
+      const steeringWheelRotation = -curDelta * 14;
+      steeringWheel.style.transform = `rotate(${steeringWheelRotation}deg)`;
+
+      // 체감 횡G 볼 위치: 0.6G 기준 최대 22px까지 시각적으로 크게 이동
+      const maxOffset = 22;
+      const gOffset = Math.max(-maxOffset, Math.min(maxOffset, (curG / 0.6) * maxOffset));
+      gBall.style.transform = `translateX(${gOffset}px)`;
+
+      // 하단 그래프 s 위치 텍스트 연동
+      document.getElementById('cur-kappa-s').textContent = `s: ${s.toFixed(1)}m`;
+      document.getElementById('cur-ay-s').textContent = `s: ${s.toFixed(1)}m`;
+      document.getElementById('cur-jy-s').textContent = `s: ${s.toFixed(1)}m`;
+      document.getElementById('cur-omega-s').textContent = `s: ${s.toFixed(1)}m`;
     }
 
     function drawSVGChart(svgId, key1, key2, key3, maxVal, isDivergent = false) {
@@ -902,28 +947,14 @@
       const carPt = traj3[idx];
       const carPos = toCanvas(carPt.x, carPt.y);
 
-      let curK = 0, curDk = 0;
+      let curK = 0;
       if (state.s >= 0 && state.s <= l) {
         curK = (1 / (2 * state.r)) * (1 - Math.cos((Math.PI * state.s) / l));
-        curDk = (Math.PI / (2 * state.r * l)) * Math.sin((Math.PI * state.s) / l);
       } else if (state.s > l) {
         curK = 1 / state.r;
       }
       const curAy = state.v * state.v * curK;
       const curDelta = Math.atan(state.lw * curK) * (180 / Math.PI);
-      const curOmega = (state.v * (state.lw * curDk) / (1 + Math.pow(state.lw * curK, 2))) * (180 / Math.PI);
-
-      meterSteer.textContent = curDelta.toFixed(2);
-      meterOmega.textContent = curOmega.toFixed(1);
-      meterAy.textContent = curAy.toFixed(2);
-      meterG.textContent = (curAy / 9.81).toFixed(2);
-      steeringWheel.style.transform = `rotate(${-curDelta * 4}deg)`;
-      gBall.style.transform = `translateX(${Math.min(22, Math.max(-22, curAy * 4.5))}px)`;
-
-      document.getElementById('cur-kappa-s').textContent = `s: ${state.s.toFixed(1)}m`;
-      document.getElementById('cur-ay-s').textContent = `s: ${state.s.toFixed(1)}m`;
-      document.getElementById('cur-jy-s').textContent = `s: ${state.s.toFixed(1)}m`;
-      document.getElementById('cur-omega-s').textContent = `s: ${state.s.toFixed(1)}m`;
 
       ctxRoad.save();
       ctxRoad.translate(carPos.cx, carPos.cy);
@@ -1167,13 +1198,16 @@
       if (state.isPlaying) {
         if (state.lastTime !== null) {
           const dt = (time - state.lastTime) / 1000;
-          const ds = state.v * dt * state.speed;
+          // 체감 속도 향상을 위한 시각적 배속 계수 (1.8배) 적용
+          const visualScale = 1.8;
+          const ds = state.v * dt * state.speed * visualScale;
           state.s += ds;
           if (state.s > computedData.endS) {
             state.s = computedData.startS;
           }
           sliderS.value = state.s;
           valS.textContent = state.s.toFixed(1);
+          updateCockpitGauges();
           renderAllCharts();
           if (state.viewMode === '2D') {
             drawRoadCanvas();
@@ -1300,6 +1334,7 @@
         playIcon.setAttribute('data-lucide', 'play');
         lucide.createIcons();
       }
+      updateCockpitGauges();
       renderAllCharts();
       if (state.viewMode === '2D') {
         drawRoadCanvas();
@@ -1331,6 +1366,7 @@
       playText.textContent = '주행 시뮬레이션 시작';
       playIcon.setAttribute('data-lucide', 'play');
       lucide.createIcons();
+      updateCockpitGauges();
       renderAllCharts();
       if (state.viewMode === '2D') {
         drawRoadCanvas();
