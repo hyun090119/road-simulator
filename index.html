@@ -718,7 +718,7 @@
       computedData = {
         startS, endS, totalLength: endS - startS,
         sArr, c1, c2, c3, traj1, traj2, traj3,
-        peakJ, peakOmega, maxAy, transTime, r
+        peakJ, peakOmega, maxAy, transTime, r, l
       };
 
       sliderS.max = endS;
@@ -754,14 +754,9 @@
         comfortLabel.textContent = '불쾌감 유발 (Uncomfortable)';
         comfortBadge.className = 'px-3.5 py-2 sm:py-2.5 rounded-xl border flex items-center justify-between text-xs font-semibold bg-rose-50 text-rose-800 border-rose-200';
       }
-
-      document.getElementById('tag-max-kappa').textContent = `최대: ${(1/state.r).toFixed(4)} m⁻¹`;
-      document.getElementById('tag-max-ay').textContent = `최대: ${maxAy.toFixed(2)} m/s²`;
-      document.getElementById('tag-max-jy').textContent = `피크: ${peakJ.toFixed(2)} m/s³`;
-      document.getElementById('tag-max-omega').textContent = `피크: ${peakOmega.toFixed(2)} °/s`;
     }
 
-    // 콕핏 계측기 전용 독립 업데이트 함수 (2D/3D 모드 및 주행거리 실시간 완벽 연동)
+    // 콕핏 계측기 및 그래프 우측 상단 실시간 배지 연동
     function updateCockpitGauges() {
       if (!computedData) return;
       const { l, r, lw, v } = state;
@@ -777,6 +772,7 @@
       }
 
       const curAy = v * v * curK;
+      const curJy = v * v * v * curDk;
       const curDelta = Math.atan(lw * curK) * (180 / Math.PI); // 앞바퀴 실제 조향각 (deg)
       const curOmega = (v * (lw * curDk) / (1 + Math.pow(lw * curK, 2))) * (180 / Math.PI);
       const curG = curAy / 9.81;
@@ -791,10 +787,17 @@
       const steeringWheelRotation = -curDelta * 14;
       steeringWheel.style.transform = `rotate(${steeringWheelRotation}deg)`;
 
-      // 체감 횡G 볼 위치: 0.6G 기준 최대 22px까지 시각적으로 크게 이동
+      // 체감 횡G 볼 위치
       const maxOffset = 22;
       const gOffset = Math.max(-maxOffset, Math.min(maxOffset, (curG / 0.6) * maxOffset));
       gBall.style.transform = `translateX(${gOffset}px)`;
+
+      // 각 그래프 우측 상단 배지에 [현재 실시간값 / 최대(피크)값] 동시 표기
+      const maxK = (1 / r);
+      document.getElementById('tag-max-kappa').innerHTML = `현재: <b class="text-blue-600">${curK.toFixed(4)}</b> / 최대: ${maxK.toFixed(4)} m⁻¹`;
+      document.getElementById('tag-max-ay').innerHTML = `현재: <b class="text-blue-600">${curAy.toFixed(2)}</b> / 최대: ${computedData.maxAy.toFixed(2)} m/s²`;
+      document.getElementById('tag-max-jy').innerHTML = `현재: <b class="text-blue-600">${curJy.toFixed(2)}</b> / 피크: ${computedData.peakJ.toFixed(2)} m/s³`;
+      document.getElementById('tag-max-omega').innerHTML = `현재: <b class="text-blue-600">${curOmega.toFixed(2)}</b> / 피크: ${computedData.peakOmega.toFixed(2)} °/s`;
 
       // 하단 그래프 s 위치 텍스트 연동
       document.getElementById('cur-kappa-s').textContent = `s: ${s.toFixed(1)}m`;
@@ -860,7 +863,7 @@
       html += `
         <line x1="${cursorX}" y1="${padT}" x2="${cursorX}" y2="${padT + ph}" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="2 2" />
         <circle cx="${cursorX}" cy="${padT + ph}" r="2.8" fill="#2563eb" />
-        <text x="${padL}" y="${h - 6}" text-anchor="middle" font-size="8" fill="#94a3b8">0</text>
+        <text x="${transX1}" y="${h - 6}" text-anchor="middle" font-size="8" fill="#94a3b8">0</text>
         <text x="${transX2}" y="${h - 6}" text-anchor="middle" font-size="8" fill="#94a3b8">${l}m</text>
         <text x="${w - padR}" y="${h - 6}" text-anchor="end" font-size="8" fill="#94a3b8">${computedData.endS.toFixed(0)}m</text>
       `;
